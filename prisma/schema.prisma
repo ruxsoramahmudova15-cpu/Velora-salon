@@ -1,0 +1,374 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String   @id @default(uuid())
+  phone                String   @unique
+  password             String?
+  name                 String?
+  avatar               String?
+  birthDate            DateTime?
+  role                 String   @default("CLIENT") // CLIENT, MASTER, ADMIN
+  isActive             Boolean  @default(true)
+  isFirstLogin         Boolean  @default(true)
+  themePreference      String   @default("SYSTEM") // LIGHT, DARK, SYSTEM
+  notificationsEnabled Boolean  @default(true)
+  reminderEnabled      Boolean  @default(true)
+  bonusBalance         Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  appointments      Appointment[]        @relation("ClientAppointments")
+  masterProfile     Master?
+  reviews           Review[]
+  bonusTransactions BonusTransaction[]
+  serviceHistory    ServiceHistory[]
+  reminders         Reminder[]
+  favoriteMasters   FavoriteMaster[]
+  dressRentals      WeddingDressRental[]
+}
+
+model Master {
+  id              String   @id @default(uuid())
+  uniqueCode      String   @unique
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  bio             String?
+  experienceYears Int      @default(0)
+  specialization  String   // SOCH, TIRNOQ, QOSH, MAKIYAJ
+  isAvailable     Boolean  @default(false)
+  averageRating   Float    @default(0)
+  totalReviews    Int      @default(0)
+
+  services        MasterService[]
+  schedule        Schedule[]
+  blockedDates    BlockedDate[]
+  appointments    Appointment[]    @relation("MasterAppointments")
+  reviews         Review[]
+  earnings        Earning[]
+  portfolio       PortfolioImage[]
+  emptySlotPromos EmptySlotPromo[]
+  favoritedBy     FavoriteMaster[]
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String   // SOCH, TIRNOQ, QOSH, MAKIYAJ
+  basePrice   Int
+  minPrice    Int
+  maxPrice    Int
+  duration    Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  masterServices MasterService[]
+  promotions     PromotionService[]
+  serviceHistory ServiceHistory[]
+}
+
+model MasterService {
+  id        String  @id @default(uuid())
+  masterId  String
+  serviceId String
+  price     Int
+  isActive  Boolean @default(true)
+
+  master  Master  @relation(fields: [masterId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@unique([masterId, serviceId])
+}
+
+model Schedule {
+  id         String  @id @default(uuid())
+  masterId   String
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  lunchStart String?
+  lunchEnd   String?
+  isWorking  Boolean @default(true)
+
+  master Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  @@unique([masterId, dayOfWeek])
+}
+
+model BlockedDate {
+  id       String   @id @default(uuid())
+  masterId String
+  date     DateTime
+  reason   String?
+
+  master Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  @@unique([masterId, date])
+}
+
+model Appointment {
+  id               String    @id @default(uuid())
+  clientId         String
+  masterId         String
+  serviceId        String
+  date             DateTime
+  startTime        String
+  endTime          String
+  status           String    @default("PENDING") // RESERVED, PENDING, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW
+  originalPrice    Int
+  discountAmount   Int       @default(0)
+  bonusUsed        Int       @default(0)
+  finalPrice       Int
+  promotionId      String?
+  emptySlotPromoId String?
+  reservedUntil    DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  client         User            @relation("ClientAppointments", fields: [clientId], references: [id])
+  master         Master          @relation("MasterAppointments", fields: [masterId], references: [id])
+  promotion      Promotion?      @relation(fields: [promotionId], references: [id])
+  emptySlotPromo EmptySlotPromo? @relation(fields: [emptySlotPromoId], references: [id])
+  review         Review?
+  earning        Earning?
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  appointmentId String   @unique
+  clientId      String
+  masterId      String
+  rating        Int
+  comment       String?
+  isEdited      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  client      User        @relation(fields: [clientId], references: [id])
+  master      Master      @relation(fields: [masterId], references: [id])
+}
+
+model Earning {
+  id            String   @id @default(uuid())
+  masterId      String
+  appointmentId String   @unique
+  amount        Int
+  date          DateTime
+
+  master      Master      @relation(fields: [masterId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+}
+
+model BonusTransaction {
+  id          String    @id @default(uuid())
+  userId      String
+  amount      Int
+  type        String    // EARNED, REDEEMED, EXPIRED
+  description String
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ServiceHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  serviceId String
+  masterId  String
+  count     Int      @default(1)
+  lastUsed  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@unique([userId, serviceId, masterId])
+}
+
+model FavoriteMaster {
+  id        String   @id @default(uuid())
+  userId    String
+  masterId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  master Master @relation(fields: [masterId], references: [id])
+
+  @@unique([userId, masterId])
+}
+
+model Promotion {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  discount       Int
+  startDate      DateTime
+  endDate        DateTime
+  targetAudience String   @default("ALL") // ALL, NEW_CLIENTS, RETURNING_CLIENTS, INACTIVE_CLIENTS
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  services     PromotionService[]
+  appointments Appointment[]
+}
+
+model PromotionService {
+  id          String @id @default(uuid())
+  promotionId String
+  serviceId   String
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  service   Service   @relation(fields: [serviceId], references: [id])
+
+  @@unique([promotionId, serviceId])
+}
+
+model EmptySlotPromo {
+  id        String   @id @default(uuid())
+  masterId  String
+  date      DateTime
+  startTime String
+  endTime   String
+  discount  Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  master       Master        @relation(fields: [masterId], references: [id])
+  appointments Appointment[]
+}
+
+model Reminder {
+  id           String   @id @default(uuid())
+  userId       String
+  serviceType  String   // SOCH, TIRNOQ, QOSH, MAKIYAJ
+  scheduledFor DateTime
+  message      String
+  isSent       Boolean  @default(false)
+  isDismissed  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model VerificationCode {
+  id           String    @id @default(uuid())
+  phone        String
+  code         String
+  attempts     Int       @default(0)
+  expiresAt    DateTime
+  blockedUntil DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([phone])
+}
+
+model PortfolioImage {
+  id        String   @id @default(uuid())
+  masterId  String
+  url       String
+  thumbnail String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  master Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+}
+
+model WeddingDress {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Int
+  rentPrice   Int
+  image       String
+  images      String   @default("[]") // JSON array of image URLs
+  size        String   // XS, S, M, L, XL, XXL
+  color       String
+  style       String   // CLASSIC, MODERN, PRINCESS, MERMAID, A_LINE
+  timesRented Int      @default(0)
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rentals      WeddingDressRental[]
+  availability DressAvailability[]
+}
+
+model WeddingDressRental {
+  id            String   @id @default(uuid())
+  dressId       String
+  clientId      String
+  startDate     DateTime
+  endDate       DateTime
+  status        String   @default("PENDING") // PENDING, CONFIRMED, ACTIVE, RETURNED, CANCELLED
+  totalPrice    Int
+  depositAmount Int      @default(0)
+  depositPaid   Boolean  @default(false)
+  refundAmount  Int      @default(0)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  dress  WeddingDress @relation(fields: [dressId], references: [id])
+  client User         @relation(fields: [clientId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  type      String   // BOOKING, CANCELLATION, REGISTRATION, REVIEW, DRESS_BOOKING, PAYMENT
+  message   String
+  userId    String?
+  masterId  String?
+  metadata  String?  // JSON string for additional data
+  createdAt DateTime @default(now())
+}
+
+model DressAvailability {
+  id        String   @id @default(uuid())
+  dressId   String
+  date      DateTime
+  isBlocked Boolean  @default(false)
+  rentalId  String?
+  
+  dress WeddingDress @relation(fields: [dressId], references: [id])
+  
+  @@unique([dressId, date])
+}
+
+// Chat tizimi
+model Conversation {
+  id        String   @id @default(uuid())
+  clientId  String
+  masterId  String
+  lastMessageAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  @@unique([clientId, masterId])
+  @@index([clientId])
+  @@index([masterId])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderId       String
+  senderType     String   // CLIENT, MASTER
+  content        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([senderId])
+}
