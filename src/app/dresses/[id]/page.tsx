@@ -166,7 +166,7 @@ export default function DressDetailPage({ params }: { params: Promise<{ id: stri
         month: date.toLocaleDateString('uz-UZ', { month: 'short' }),
         isAvailable: avail?.isAvailable ?? true,
         isSelected,
-        isInRange,
+        isInRange: Boolean(isInRange),
       })
     }
     
