@@ -17,7 +17,8 @@ import {
   LogOut,
   Bell,
   ChevronRight,
-  CalendarCheck
+  CalendarCheck,
+  ShoppingBag
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
@@ -37,6 +38,11 @@ const menuItems = [
     title: 'Navbatlar',
     href: '/admin/bookings',
     icon: CalendarCheck,
+  },
+  {
+    title: 'Ko\'ylak Ijaralari',
+    href: '/admin/dress-rentals',
+    icon: ShoppingBag,
   },
   {
     title: 'Stilistlar',
