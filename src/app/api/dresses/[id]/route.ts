@@ -27,7 +27,8 @@ export async function GET(
     // Generate availability for next 60 days
     const availability: { date: string; isAvailable: boolean }[] = []
     const today = new Date()
-    const blockedDates = bookedDates.map(b => b.date.toISOString().split('T')[0])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const blockedDates = bookedDates.map((b: any) => b.date.toISOString().split('T')[0])
     
     for (let i = 0; i < 60; i++) {
       const date = new Date(today)
