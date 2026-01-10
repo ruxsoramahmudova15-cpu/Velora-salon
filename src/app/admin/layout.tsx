@@ -16,7 +16,8 @@ import {
   X,
   LogOut,
   Bell,
-  ChevronRight
+  ChevronRight,
+  CalendarCheck
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
@@ -31,6 +32,11 @@ const menuItems = [
     title: 'Dashboard',
     href: '/admin',
     icon: LayoutDashboard,
+  },
+  {
+    title: 'Navbatlar',
+    href: '/admin/bookings',
+    icon: CalendarCheck,
   },
   {
     title: 'Stilistlar',
