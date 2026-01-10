@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Calendar, Clock, User, ChevronLeft, ChevronRight, Check,
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Avatar } from '@/components/ui/avatar'
 import { Rating } from '@/components/ui/rating'
+import { Loading } from '@/components/ui/loading'
 import { cn } from '@/lib/utils'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -62,7 +63,7 @@ const timeSlots = [
   '16:00', '16:30', '17:00', '17:30', '18:00'
 ]
 
-export default function BookingPage() {
+function BookingContent() {
   const searchParams = useSearchParams()
   const [step, setStep] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(searchParams.get('category'))
@@ -106,7 +107,6 @@ export default function BookingPage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500))
     setIsSuccess(true)
     setIsSubmitting(false)
@@ -176,7 +176,6 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen py-12">
       <div className="container mx-auto px-4 max-w-4xl">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold light-text-primary mb-2">
             Navbat olish
@@ -186,7 +185,6 @@ export default function BookingPage() {
           </p>
         </div>
 
-        {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-8">
           {[1, 2, 3, 4].map((s) => (
             <div key={s} className="flex items-center">
@@ -209,7 +207,6 @@ export default function BookingPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {/* Step 1: Category & Service */}
           {step === 1 && (
             <motion.div
               key="step1"
@@ -276,7 +273,6 @@ export default function BookingPage() {
             </motion.div>
           )}
 
-          {/* Step 2: Master */}
           {step === 2 && (
             <motion.div
               key="step2"
@@ -332,7 +328,6 @@ export default function BookingPage() {
             </motion.div>
           )}
 
-          {/* Step 3: Date & Time */}
           {step === 3 && (
             <motion.div
               key="step3"
@@ -342,7 +337,6 @@ export default function BookingPage() {
             >
               <h2 className="text-xl font-semibold mb-4 light-text-primary">Sana va vaqtni tanlang</h2>
               
-              {/* Calendar */}
               <Card className="mb-6">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-4">
@@ -384,7 +378,6 @@ export default function BookingPage() {
                 </CardContent>
               </Card>
 
-              {/* Time Slots */}
               {selectedDate && (
                 <>
                   <h3 className="font-medium mb-3 light-text-primary">Vaqtni tanlang</h3>
@@ -424,7 +417,6 @@ export default function BookingPage() {
             </motion.div>
           )}
 
-          {/* Step 4: Contact Info */}
           {step === 4 && (
             <motion.div
               key="step4"
@@ -463,7 +455,6 @@ export default function BookingPage() {
                 </CardContent>
               </Card>
 
-              {/* Summary */}
               <Card className="mb-6">
                 <CardContent className="p-6">
                   <h3 className="font-semibold mb-4 light-text-primary">Buyurtma ma'lumotlari</h3>
@@ -511,5 +502,17 @@ export default function BookingPage() {
         </AnimatePresence>
       </div>
     </div>
+  )
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loading size="lg" />
+      </div>
+    }>
+      <BookingContent />
+    </Suspense>
   )
 }
