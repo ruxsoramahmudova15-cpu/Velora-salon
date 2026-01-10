@@ -104,7 +104,8 @@ export async function GET(request: NextRequest) {
         todayAppointments,
         trends,
       },
-      recentActivity: recentActivity.map(a => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recentActivity: recentActivity.map((a: any) => ({
         id: a.id,
         type: a.type,
         message: a.message,

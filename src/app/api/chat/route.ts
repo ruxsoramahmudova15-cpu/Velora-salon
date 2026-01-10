@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const userType = searchParams.get('userType') // CLIENT or MASTER
 
     if (!userId || !userType) {
-      return NextResponse.json({ error: 'userId va userType kerak' }, { status: 400 })
+      return NextResponse.json({ error: 'userId va userType kerak' }, { status: 400 }) 
     }
 
     if (userType === 'CLIENT') {
