@@ -1,6 +1,6 @@
 'use client'
 
-import { User, Phone, Mail, Calendar, Settings, LogOut } from 'lucide-react'
+import { User, Phone, Calendar, Settings, LogOut } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
@@ -80,12 +80,6 @@ export default function ProfilePage() {
                   <Phone className="h-5 w-5" />
                   <span>{user?.phone}</span>
                 </div>
-                {user?.email && (
-                  <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
-                    <Mail className="h-5 w-5" />
-                    <span>{user.email}</span>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
