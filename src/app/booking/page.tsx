@@ -24,60 +24,70 @@ const categories = [
   { id: 'MAKIYAJ', name: 'Makiyaj', icon: Heart },
 ]
 
-const services = {
-  SOCH: [
-    { id: 1, name: 'Soch kesish', price: 80000, duration: 45 },
-    { id: 2, name: 'Soch bo\'yash', price: 250000, duration: 120 },
-    { id: 3, name: 'Ukladka', price: 100000, duration: 60 },
-    { id: 4, name: 'Soch davolash', price: 150000, duration: 90 },
-  ],
-  TIRNOQ: [
-    { id: 5, name: 'Klassik manikyur', price: 60000, duration: 45 },
-    { id: 6, name: 'Gel lak', price: 100000, duration: 60 },
-    { id: 7, name: 'Nail art', price: 150000, duration: 90 },
-    { id: 8, name: 'Pedikyur', price: 80000, duration: 60 },
-  ],
-  QOSH: [
-    { id: 9, name: 'Qosh dizayni', price: 40000, duration: 30 },
-    { id: 10, name: 'Qosh bo\'yash', price: 60000, duration: 45 },
-    { id: 11, name: 'Kiprik uzaytirish', price: 200000, duration: 120 },
-    { id: 12, name: 'Laminirlash', price: 120000, duration: 60 },
-  ],
-  MAKIYAJ: [
-    { id: 13, name: 'Kundalik makiyaj', price: 100000, duration: 45 },
-    { id: 14, name: 'Bayram makiyaji', price: 200000, duration: 60 },
-    { id: 15, name: 'To\'y makiyaji', price: 400000, duration: 120 },
-    { id: 16, name: 'Makiyaj darsi', price: 300000, duration: 120 },
-  ],
-}
-
-const masters = [
-  { id: 1, name: 'Malika Umarova', rating: 4.9, reviews: 128, speciality: 'Soch stilisti', avatar: null },
-  { id: 2, name: 'Nilufar Karimova', rating: 4.8, reviews: 95, speciality: 'Manikyur stilisti', avatar: null },
-  { id: 3, name: 'Zarina Aliyeva', rating: 4.9, reviews: 156, speciality: 'Makiyaj artisti', avatar: null },
-]
-
 const timeSlots = [
   '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
   '12:00', '12:30', '14:00', '14:30', '15:00', '15:30',
   '16:00', '16:30', '17:00', '17:30', '18:00'
 ]
 
+interface DbMaster {
+  id: string
+  uniqueCode: string
+  specialization: string
+  averageRating: number
+  totalReviews: number
+  user: { name: string; avatar: string | null }
+}
+
+interface DbService {
+  id: string
+  name: string
+  category: string
+  basePrice: number
+  duration: number
+}
+
 function BookingContent() {
   const searchParams = useSearchParams()
   const [step, setStep] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(searchParams.get('category'))
-  const [selectedService, setSelectedService] = useState<number | null>(null)
-  const [selectedMaster, setSelectedMaster] = useState<number | null>(null)
+  const [selectedService, setSelectedService] = useState<string | null>(null)
+  const [selectedMaster, setSelectedMaster] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  
+  // Database data
+  const [dbMasters, setDbMasters] = useState<DbMaster[]>([])
+  const [dbServices, setDbServices] = useState<DbService[]>([])
+  const [loading, setLoading] = useState(true)
 
   const currentMonth = new Date()
   const [viewMonth, setViewMonth] = useState(currentMonth)
+
+  // Load data from database
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [mastersRes, servicesRes] = await Promise.all([
+          fetch('/api/masters'),
+          fetch('/api/services')
+        ])
+        const mastersData = await mastersRes.json()
+        const servicesData = await servicesRes.json()
+        setDbMasters(mastersData.data || [])
+        setDbServices(servicesData.data || [])
+      } catch (error) {
+        console.error('Load data error:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()
@@ -108,22 +118,8 @@ function BookingContent() {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      // Get master from database
-      const mastersRes = await fetch('/api/masters')
-      const mastersData = await mastersRes.json()
-      const dbMasters = mastersData.data || []
-      
-      // Get services from database
-      const servicesRes = await fetch('/api/services')
-      const servicesData = await servicesRes.json()
-      const dbServices = servicesData.data || []
-      
-      // Find matching master and service
-      const masterData = dbMasters[selectedMaster ? selectedMaster - 1 : 0]
-      const serviceData = dbServices.find((s: { name: string }) => s.name === selectedServiceData?.name) || dbServices[0]
-      
-      if (!masterData || !serviceData) {
-        alert('Master yoki xizmat topilmadi')
+      if (!selectedMaster || !selectedService) {
+        alert('Master va xizmat tanlanmagan')
         setIsSubmitting(false)
         return
       }
@@ -139,8 +135,8 @@ function BookingContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          serviceId: serviceData.id,
-          masterId: masterData.id,
+          serviceId: selectedService,
+          masterId: selectedMaster,
           date: selectedDate?.toISOString(),
           startTime: selectedTime,
           endTime,
@@ -164,11 +160,13 @@ function BookingContent() {
     }
   }
 
-  const selectedServiceData = selectedCategory 
-    ? services[selectedCategory as keyof typeof services]?.find(s => s.id === selectedService)
-    : null
+  // Filter services by category
+  const filteredServices = selectedCategory 
+    ? dbServices.filter(s => s.category === selectedCategory)
+    : []
 
-  const selectedMasterData = masters.find(m => m.id === selectedMaster)
+  const selectedServiceData = dbServices.find(s => s.id === selectedService)
+  const selectedMasterData = dbMasters.find(m => m.id === selectedMaster)
 
   if (isSuccess) {
     return (
@@ -197,7 +195,7 @@ function BookingContent() {
                 </div>
                 <div className="flex justify-between">
                   <span className="light-text-muted">Stilist:</span>
-                  <span className="font-medium light-text-primary">{selectedMasterData?.name}</span>
+                  <span className="font-medium light-text-primary">{selectedMasterData?.user?.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="light-text-muted">Sana:</span>
@@ -209,7 +207,7 @@ function BookingContent() {
                 </div>
                 <div className="flex justify-between border-t border-subtle pt-3">
                   <span className="light-text-muted">Narx:</span>
-                  <span className="font-bold text-lg text-accent">{selectedServiceData?.price.toLocaleString()} so'm</span>
+                  <span className="font-bold text-lg text-accent">{selectedServiceData?.basePrice?.toLocaleString()} so'm</span>
                 </div>
               </CardContent>
             </Card>
@@ -292,7 +290,7 @@ function BookingContent() {
                 <>
                   <h2 className="text-xl font-semibold mb-4 light-text-primary">Xizmatni tanlang</h2>
                   <div className="grid gap-3 mb-6">
-                    {services[selectedCategory as keyof typeof services]?.map((service) => (
+                    {filteredServices.map((service) => (
                       <Card
                         key={service.id}
                         className={cn(
@@ -306,7 +304,7 @@ function BookingContent() {
                             <p className="font-medium light-text-primary">{service.name}</p>
                             <p className="text-sm light-text-muted">{service.duration} daqiqa</p>
                           </div>
-                          <p className="font-bold text-accent">{service.price.toLocaleString()} so'm</p>
+                          <p className="font-bold text-accent">{service.basePrice.toLocaleString()} so'm</p>
                         </CardContent>
                       </Card>
                     ))}
@@ -334,7 +332,7 @@ function BookingContent() {
             >
               <h2 className="text-xl font-semibold mb-4 light-text-primary">Stilistni tanlang</h2>
               <div className="grid gap-4 mb-6">
-                {masters.map((master) => (
+                {dbMasters.map((master) => (
                   <Card
                     key={master.id}
                     className={cn(
@@ -344,13 +342,13 @@ function BookingContent() {
                     onClick={() => setSelectedMaster(master.id)}
                   >
                     <CardContent className="p-4 flex items-center gap-4">
-                      <Avatar fallback={master.name.charAt(0)} size="lg" />
+                      <Avatar src={master.user.avatar} fallback={master.user.name?.charAt(0) || 'M'} size="lg" />
                       <div className="flex-1">
-                        <p className="font-semibold light-text-primary">{master.name}</p>
-                        <p className="text-sm light-text-muted">{master.speciality}</p>
+                        <p className="font-semibold light-text-primary">{master.user.name}</p>
+                        <p className="text-sm light-text-muted">{master.specialization === 'SOCH' ? 'Soch stilisti' : master.specialization === 'TIRNOQ' ? 'Manikyur stilisti' : master.specialization === 'MAKIYAJ' ? 'Makiyaj artisti' : 'Stilist'}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Rating value={master.rating} size="sm" />
-                          <span className="text-xs light-text-muted">({master.reviews})</span>
+                          <Rating value={master.averageRating} size="sm" />
+                          <span className="text-xs light-text-muted">({master.totalReviews})</span>
                         </div>
                       </div>
                       {selectedMaster === master.id && (
@@ -517,7 +515,7 @@ function BookingContent() {
                     </div>
                     <div className="flex justify-between">
                       <span className="light-text-muted">Stilist:</span>
-                      <span className="light-text-primary">{selectedMasterData?.name}</span>
+                      <span className="light-text-primary">{selectedMasterData?.user?.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="light-text-muted">Sana:</span>
@@ -529,7 +527,7 @@ function BookingContent() {
                     </div>
                     <div className="flex justify-between border-t border-subtle pt-2 mt-2">
                       <span className="font-medium light-text-primary">Jami:</span>
-                      <span className="font-bold text-lg text-accent">{selectedServiceData?.price.toLocaleString()} so'm</span>
+                      <span className="font-bold text-lg text-accent">{selectedServiceData?.basePrice?.toLocaleString()} so'm</span>
                     </div>
                   </div>
                 </CardContent>
