@@ -107,9 +107,61 @@ function BookingContent() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsSuccess(true)
-    setIsSubmitting(false)
+    try {
+      // Get master from database
+      const mastersRes = await fetch('/api/masters')
+      const mastersData = await mastersRes.json()
+      const dbMasters = mastersData.data || []
+      
+      // Get services from database
+      const servicesRes = await fetch('/api/services')
+      const servicesData = await servicesRes.json()
+      const dbServices = servicesData.data || []
+      
+      // Find matching master and service
+      const masterData = dbMasters[selectedMaster ? selectedMaster - 1 : 0]
+      const serviceData = dbServices.find((s: { name: string }) => s.name === selectedServiceData?.name) || dbServices[0]
+      
+      if (!masterData || !serviceData) {
+        alert('Master yoki xizmat topilmadi')
+        setIsSubmitting(false)
+        return
+      }
+
+      // Calculate end time
+      const duration = selectedServiceData?.duration || 60
+      const [hours, minutes] = (selectedTime || '09:00').split(':').map(Number)
+      const endHours = hours + Math.floor((minutes + duration) / 60)
+      const endMinutes = (minutes + duration) % 60
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceId: serviceData.id,
+          masterId: masterData.id,
+          date: selectedDate?.toISOString(),
+          startTime: selectedTime,
+          endTime,
+          clientPhone: '+998' + phone.replace(/\s/g, ''),
+          clientName: name
+        })
+      })
+
+      const data = await res.json()
+      
+      if (data.success) {
+        setIsSuccess(true)
+      } else {
+        alert(data.error || 'Xatolik yuz berdi')
+      }
+    } catch (error) {
+      console.error('Booking error:', error)
+      alert('Navbat olishda xatolik yuz berdi')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const selectedServiceData = selectedCategory 
