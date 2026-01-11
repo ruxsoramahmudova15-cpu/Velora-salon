@@ -61,7 +61,8 @@ export async function GET(request: NextRequest) {
     })
     const serviceMap = new Map(services.map((s: { id: string; name: string }) => [s.id, s.name]))
 
-    const formattedAppointments = appointments.map(apt => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const formattedAppointments = appointments.map((apt: any) => ({
       id: apt.id,
       date: apt.date,
       startTime: apt.startTime,

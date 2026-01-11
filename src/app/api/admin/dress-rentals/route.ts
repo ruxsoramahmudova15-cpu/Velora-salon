@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    const formattedRentals = rentals.map(rental => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const formattedRentals = rentals.map((rental: any) => ({
       id: rental.id,
       startDate: rental.startDate,
       endDate: rental.endDate,
