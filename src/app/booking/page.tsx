@@ -78,8 +78,8 @@ function BookingContent() {
         ])
         const mastersData = await mastersRes.json()
         const servicesData = await servicesRes.json()
-        setDbMasters(mastersData.data || [])
-        setDbServices(servicesData.data || [])
+        setDbMasters(mastersData.masters || mastersData.data || [])
+        setDbServices(servicesData.services || servicesData.data || [])
       } catch (error) {
         console.error('Load data error:', error)
       } finally {
