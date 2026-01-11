@@ -94,14 +94,15 @@ export async function GET(request: NextRequest) {
     })
 
     // Get service names
-    const serviceIds = [...new Set(appointments.map(a => a.serviceId))]
+    const serviceIds = [...new Set(appointments.map((a: { serviceId: string }) => a.serviceId))]
     const services = await db.service.findMany({
       where: { id: { in: serviceIds } },
       select: { id: true, name: true }
     })
-    const serviceMap = new Map(services.map(s => [s.id, s.name]))
+    const serviceMap = new Map(services.map((s: { id: string; name: string }) => [s.id, s.name]))
 
-    const formattedAppointments = appointments.map(apt => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const formattedAppointments = appointments.map((apt: any) => ({
       ...apt,
       serviceName: serviceMap.get(apt.serviceId) || 'Noma\'lum xizmat',
       masterName: apt.master.user.name,
