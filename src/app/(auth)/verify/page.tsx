@@ -16,7 +16,7 @@ function VerifyContent() {
   const mode = searchParams.get('mode') || 'login'
   
   const { setUser } = useAuthStore()
-  const [code, setCode] = useState(['', '', '', '', '', ''])
+  const [code, setCode] = useState(['', '', '', ''])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [countdown, setCountdown] = useState(60)
@@ -45,11 +45,11 @@ function VerifyContent() {
     setCode(newCode)
     setError('')
 
-    if (value && index < 5) {
+    if (value && index < 3) {
       inputRefs.current[index + 1]?.focus()
     }
 
-    if (newCode.every(digit => digit) && newCode.join('').length === 6) {
+    if (newCode.every(digit => digit) && newCode.join('').length === 4) {
       handleVerify(newCode.join(''))
     }
   }
@@ -62,14 +62,14 @@ function VerifyContent() {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault()
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4)
     const newCode = [...code]
     pastedData.split('').forEach((digit, index) => {
-      if (index < 6) newCode[index] = digit
+      if (index < 4) newCode[index] = digit
     })
     setCode(newCode)
     
-    if (pastedData.length === 6) {
+    if (pastedData.length === 4) {
       handleVerify(pastedData)
     }
   }
@@ -129,7 +129,7 @@ function VerifyContent() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Xatolik yuz berdi')
-      setCode(['', '', '', '', '', ''])
+      setCode(['', '', '', ''])
       inputRefs.current[0]?.focus()
     } finally {
       setIsLoading(false)
@@ -168,7 +168,7 @@ function VerifyContent() {
         </div>
         <CardTitle className="text-2xl light-text-primary">Kodni kiriting</CardTitle>
         <CardDescription className="light-text-muted">
-          {phone} raqamiga yuborilgan 6 xonali kodni kiriting
+          {phone} raqamiga yuborilgan 4 xonali kodni kiriting
         </CardDescription>
       </CardHeader>
       <CardContent>
