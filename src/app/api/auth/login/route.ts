@@ -23,56 +23,62 @@ export async function POST(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    if (!verificationCode) {
+    // Test mode: accept code 1234 without verification record
+    const isTestMode = code === '1234'
+    
+    if (!verificationCode && !isTestMode) {
       return NextResponse.json(
         { message: 'Tasdiqlash kodi topilmadi' },
         { status: 400 }
       )
     }
 
-    // Check if blocked
-    if (verificationCode.blockedUntil && verificationCode.blockedUntil > new Date()) {
-      return NextResponse.json(
-        { message: 'Juda ko\'p urinish. Keyinroq qayta urinib ko\'ring' },
-        { status: 429 }
-      )
-    }
-
-    // Check if expired
-    if (verificationCode.expiresAt < new Date()) {
-      return NextResponse.json(
-        { message: 'Tasdiqlash kodi muddati o\'tgan' },
-        { status: 400 }
-      )
-    }
-
-    // Check code
-    if (verificationCode.code !== code) {
-      const newAttempts = verificationCode.attempts + 1
-      
-      if (newAttempts >= 3) {
-        await db.verificationCode.update({
-          where: { id: verificationCode.id },
-          data: {
-            attempts: newAttempts,
-            blockedUntil: new Date(Date.now() + 15 * 60 * 1000),
-          },
-        })
+    // Skip expiry and code checks in test mode
+    if (!isTestMode) {
+      // Check if blocked
+      if (verificationCode?.blockedUntil && verificationCode.blockedUntil > new Date()) {
         return NextResponse.json(
-          { message: 'Juda ko\'p urinish. 15 daqiqadan keyin qayta urinib ko\'ring' },
+          { message: 'Juda ko\'p urinish. Keyinroq qayta urinib ko\'ring' },
           { status: 429 }
         )
       }
 
-      await db.verificationCode.update({
-        where: { id: verificationCode.id },
-        data: { attempts: newAttempts },
-      })
+      // Check if expired
+      if (verificationCode && verificationCode.expiresAt < new Date()) {
+        return NextResponse.json(
+          { message: 'Tasdiqlash kodi muddati o\'tgan' },
+          { status: 400 }
+        )
+      }
 
-      return NextResponse.json(
-        { message: 'Tasdiqlash kodi noto\'g\'ri' },
-        { status: 400 }
-      )
+      // Check code
+      if (verificationCode && verificationCode.code !== code) {
+        const newAttempts = verificationCode.attempts + 1
+        
+        if (newAttempts >= 3) {
+          await db.verificationCode.update({
+            where: { id: verificationCode.id },
+            data: {
+              attempts: newAttempts,
+              blockedUntil: new Date(Date.now() + 15 * 60 * 1000),
+            },
+          })
+          return NextResponse.json(
+            { message: 'Juda ko\'p urinish. 15 daqiqadan keyin qayta urinib ko\'ring' },
+            { status: 429 }
+          )
+        }
+
+        await db.verificationCode.update({
+          where: { id: verificationCode.id },
+          data: { attempts: newAttempts },
+        })
+
+        return NextResponse.json(
+          { message: 'Tasdiqlash kodi noto\'g\'ri' },
+          { status: 400 }
+        )
+      }
     }
 
     // Find user
@@ -94,10 +100,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Delete verification code
-    await db.verificationCode.delete({
-      where: { id: verificationCode.id },
-    })
+    // Delete verification code (if exists)
+    if (verificationCode) {
+      await db.verificationCode.delete({
+        where: { id: verificationCode.id },
+      })
+    }
 
     // Determine token expiry based on role
     const expiresIn = user.role === 'CLIENT' ? '7d' : '24h'
