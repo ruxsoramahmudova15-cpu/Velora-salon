@@ -59,11 +59,11 @@ export async function GET(request: NextRequest) {
     // Statistics
     const stats = {
       total: rentals.length,
-      pending: rentals.filter(r => r.status === 'PENDING').length,
-      confirmed: rentals.filter(r => r.status === 'CONFIRMED').length,
-      active: rentals.filter(r => r.status === 'ACTIVE').length,
-      returned: rentals.filter(r => r.status === 'RETURNED').length,
-      cancelled: rentals.filter(r => r.status === 'CANCELLED').length
+      pending: rentals.filter((r: { status: string }) => r.status === 'PENDING').length,
+      confirmed: rentals.filter((r: { status: string }) => r.status === 'CONFIRMED').length,
+      active: rentals.filter((r: { status: string }) => r.status === 'ACTIVE').length,
+      returned: rentals.filter((r: { status: string }) => r.status === 'RETURNED').length,
+      cancelled: rentals.filter((r: { status: string }) => r.status === 'CANCELLED').length
     }
 
     return NextResponse.json({ 

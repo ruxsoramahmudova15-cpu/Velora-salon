@@ -54,12 +54,12 @@ export async function GET(request: NextRequest) {
     })
 
     // Get service names
-    const serviceIds = [...new Set(appointments.map(a => a.serviceId))]
+    const serviceIds = [...new Set(appointments.map((a: { serviceId: string }) => a.serviceId))]
     const services = await db.service.findMany({
       where: { id: { in: serviceIds } },
       select: { id: true, name: true }
     })
-    const serviceMap = new Map(services.map(s => [s.id, s.name]))
+    const serviceMap = new Map(services.map((s: { id: string; name: string }) => [s.id, s.name]))
 
     const formattedAppointments = appointments.map(apt => ({
       id: apt.id,
@@ -90,10 +90,10 @@ export async function GET(request: NextRequest) {
     // Statistics
     const stats = {
       total: appointments.length,
-      pending: appointments.filter(a => a.status === 'PENDING').length,
-      confirmed: appointments.filter(a => a.status === 'CONFIRMED').length,
-      completed: appointments.filter(a => a.status === 'COMPLETED').length,
-      cancelled: appointments.filter(a => a.status === 'CANCELLED').length
+      pending: appointments.filter((a: { status: string }) => a.status === 'PENDING').length,
+      confirmed: appointments.filter((a: { status: string }) => a.status === 'CONFIRMED').length,
+      completed: appointments.filter((a: { status: string }) => a.status === 'COMPLETED').length,
+      cancelled: appointments.filter((a: { status: string }) => a.status === 'CANCELLED').length
     }
 
     return NextResponse.json({ 
