@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+// Admin bookings API - navbatlarni boshqarish
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
