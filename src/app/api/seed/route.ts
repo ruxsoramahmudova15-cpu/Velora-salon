@@ -5,31 +5,33 @@ export async function GET() {
   try {
     console.log('🌱 Seeding database...')
 
-    // Clear existing data
-    await db.message.deleteMany()
-    await db.conversation.deleteMany()
-    await db.dressAvailability.deleteMany()
-    await db.weddingDressRental.deleteMany()
-    await db.weddingDress.deleteMany()
-    await db.activityLog.deleteMany()
-    await db.reminder.deleteMany()
-    await db.portfolioImage.deleteMany()
-    await db.verificationCode.deleteMany()
-    await db.emptySlotPromo.deleteMany()
-    await db.promotionService.deleteMany()
-    await db.promotion.deleteMany()
-    await db.favoriteMaster.deleteMany()
-    await db.serviceHistory.deleteMany()
-    await db.bonusTransaction.deleteMany()
-    await db.earning.deleteMany()
-    await db.review.deleteMany()
-    await db.appointment.deleteMany()
-    await db.blockedDate.deleteMany()
-    await db.schedule.deleteMany()
-    await db.masterService.deleteMany()
-    await db.master.deleteMany()
-    await db.service.deleteMany()
-    await db.user.deleteMany()
+    // Clear existing data - use transaction for safety
+    await db.$transaction([
+      db.message.deleteMany(),
+      db.conversation.deleteMany(),
+      db.dressAvailability.deleteMany(),
+      db.weddingDressRental.deleteMany(),
+      db.weddingDress.deleteMany(),
+      db.activityLog.deleteMany(),
+      db.reminder.deleteMany(),
+      db.portfolioImage.deleteMany(),
+      db.verificationCode.deleteMany(),
+      db.emptySlotPromo.deleteMany(),
+      db.promotionService.deleteMany(),
+      db.promotion.deleteMany(),
+      db.favoriteMaster.deleteMany(),
+      db.serviceHistory.deleteMany(),
+      db.bonusTransaction.deleteMany(),
+      db.earning.deleteMany(),
+      db.review.deleteMany(),
+      db.appointment.deleteMany(),
+      db.blockedDate.deleteMany(),
+      db.schedule.deleteMany(),
+      db.masterService.deleteMany(),
+      db.master.deleteMany(),
+      db.service.deleteMany(),
+      db.user.deleteMany(),
+    ])
 
     // Create services
     const services = await Promise.all([
